@@ -8,4 +8,6 @@ public class Client
     public string Email { get; set; }
     public string Telephone { get; set; }
     public string Pesel { get; set; }
+    public virtual ICollection<ClientTrip> ClientTrips { get; set; } = new List<ClientTrip>();
+
 }
