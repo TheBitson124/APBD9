@@ -55,24 +55,25 @@ public partial class EntityFrameworkContext:DbContext
             entity.Property(e => e.Name).HasMaxLength(120);
             entity.HasMany(e => e.IdTrips).WithMany(c => c.IdCountries)
                 .UsingEntity<Dictionary<string, object>>(
-                "CountryTrip",
+                "Country_Trip",
                 cr => cr.HasOne<Trip>().WithMany()
                     .HasForeignKey("IdTrip")
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("CountryTrip_Trip"),
+                    .HasConstraintName("Country_Trip_Trip"),
                 tr => tr.HasOne<Country>().WithMany()
                     .HasForeignKey("IdCountry")
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("CountryTrip_Country"),
+                    .HasConstraintName("Country_Trip_Country"),
                 join =>
                 {
                     join.HasKey("IdCountry", "IdTrip").HasName("CountryTripPrimaryKey");
-                    join.ToTable("CountryTrip");
+                    join.ToTable("Country_Trip");
                 });
         });
         modelBuilder.Entity<Trip>(entity =>
         {
             entity.HasKey(e => e.IdTrip).HasName("TripPrimaryKey");
+
             entity.ToTable("Trip");
 
             entity.Property(e => e.DateFrom).HasColumnType("datetime");

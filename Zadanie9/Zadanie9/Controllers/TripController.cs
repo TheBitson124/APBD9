@@ -50,7 +50,7 @@ public class TripController : ControllerBase
         var client = await _context.Clients.FindAsync(id);
         if (client == null)
         {
-            return NotFound("Client with id :{id} doesnt exist");
+            return NotFound($"Client with id :{id} doesnt exist");
         }
 
         var query = await _context.ClientTrips.AnyAsync(trip => trip.IdClient == id);
@@ -61,5 +61,49 @@ public class TripController : ControllerBase
 
         _context.Clients.Remove(client);
         return Ok("Client deleted");
+    }
+
+    [HttpPost("{idTrip:int}/clients")]
+    public async Task<IActionResult> AddClientToTrip(int idTrip, ClientToTripDTO addClient)
+    {
+        var trip = await _context.Trips.FindAsync(idTrip);
+        if (trip == null)
+        {
+            return NotFound($"Trip with id :{idTrip} doesnt exist");
+
+        }
+        if (trip.DateFrom < DateTime.Now)
+        {
+            return NotFound($"Trip with id :{idTrip} has DateFrom not in the future");
+        }
+        var client = await _context.Clients.AnyAsync(c => c.Pesel == addClient.Pesel);
+        if (client == null)
+        {
+            return NotFound($"Client with Pesel :{addClient.Pesel} doesnt exist");
+        }
+        var trips = await _context.ClientTrips.AnyAsync(ct => ct.IdClientNavigation.Pesel == addClient.Pesel && ct.IdTrip == idTrip);
+        if (trips != null )
+        {
+            return NotFound($"Client with Pesel :{addClient.Pesel} has this trip already");
+        }
+
+        var klient = new Client()
+        {
+            Email = addClient.Email,
+            FirstName = addClient.FirstName,
+            LastName = addClient.LastName,
+            Pesel = addClient.Pesel,
+            Telephone = addClient.Telephone,
+        };
+        var klientTrip = new ClientTrip()
+        {
+            IdClientNavigation = klient,
+            IdTrip = idTrip,
+            RegisteredAt = DateTime.Now,
+            PaymentDate = addClient.PaymentDate
+        };
+        await _context.Clients.AddAsync(klient);
+        await _context.ClientTrips.AddAsync(klientTrip);
+        return Ok("Client added");
     }
 }
