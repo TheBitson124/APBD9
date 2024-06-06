@@ -1,6 +1,9 @@
 ﻿namespace Zadanie9.Controllers;
-
-public class TripController
+using System.Transactions;
+using Microsoft.AspNetCore.Mvc;
+[Route("api/[controller]")]
+[ApiController]
+public class TripController : ControllerBase
 {
     
 }
