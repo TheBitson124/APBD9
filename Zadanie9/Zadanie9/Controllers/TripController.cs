@@ -77,14 +77,10 @@ public class TripController : ControllerBase
             return NotFound($"Trip with id :{idTrip} has DateFrom not in the future");
         }
         var client = await _context.Clients.AnyAsync(c => c.Pesel == addClient.Pesel);
-        if (client == null)
-        {
-            return NotFound($"Client with Pesel :{addClient.Pesel} doesnt exist");
-        }
         var trips = await _context.ClientTrips.AnyAsync(ct => ct.IdClientNavigation.Pesel == addClient.Pesel && ct.IdTrip == idTrip);
-        if (trips != null )
+        if (trips)
         {
-            return NotFound($"Client with Pesel :{addClient.Pesel} has this trip already");
+            return NotFound($"Client with Pesel :{addClient.Pesel} has trip with id : {idTrip} already");
         }
 
         var klient = new Client()
@@ -102,8 +98,13 @@ public class TripController : ControllerBase
             RegisteredAt = DateTime.Now,
             PaymentDate = addClient.PaymentDate
         };
-        await _context.Clients.AddAsync(klient);
+        if (!client)
+        {
+            await _context.Clients.AddAsync(klient);
+        }
         await _context.ClientTrips.AddAsync(klientTrip);
+        await _context.SaveChangesAsync();
+
         return Ok("Client added");
     }
 }
