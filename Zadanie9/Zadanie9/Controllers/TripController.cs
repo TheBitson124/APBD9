@@ -1,4 +1,6 @@
-﻿using Zadanie9.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Zadanie9.Data;
+using Zadanie9.DTOs;
 
 namespace Zadanie9.Controllers;
 using System.Transactions;
@@ -16,7 +18,48 @@ public class TripController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTrips([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        
+        var query  = _context.Trips.OrderByDescending(t => t.DateFrom).Include(t => t.IdCountries)
+            .Skip((page - 1) * pageSize).Take(pageSize);
+        var count = await _context.Trips.CountAsync();
+        List<Trip> trips = await query.ToListAsync();
+        var result = new
+        {
+            pageNum = page,
+            pageSize = pageSize,
+            allPages = (int)Math.Ceiling(count/(double)pageSize),
+            trips = trips.Select((Trip t) => new
+            {
+                Name = t.Name,
+                Description = t.Description,
+                DateFrom = t.DateFrom,
+                DateTo = t.DateTo,
+                MaxPeople = t.MaxPeople,
+                Countries = t.IdCountries.Select(x => new { x.Name }),
+                Clients = _context.ClientTrips.Include(x => x.IdClientNavigation)
+                    .Where(x => x.IdTrip == t.IdTrip).Select(x => new
+                    {
+                        FirstName = x.IdClientNavigation.FirstName, LastName = x.IdClientNavigation.LastName
+                    })
+            })
+        };
         return Ok(result);
+    }
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteCLient(int id)
+    {
+        var client = await _context.Clients.FindAsync(id);
+        if (client == null)
+        {
+            return NotFound("Client with id :{id} doesnt exist");
+        }
+
+        var query = await _context.ClientTrips.AnyAsync(trip => trip.IdClient == id);
+        if (query)
+        {
+            return NotFound("Client has Trips");
+        }
+
+        _context.Clients.Remove(client);
+        return Ok("Client deleted");
     }
 }
